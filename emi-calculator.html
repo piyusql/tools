@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Loan EMI Planner</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            --neutral-gradient: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+
+            --color-text: #333;
+            --color-text-muted: #666;
+            --color-text-light: #888;
+            --color-border: #e0e0e0;
+            --color-border-light: #eee;
+            --color-error: #e74c3c;
+            --color-success: #27ae60;
+
+            --radius-sm: 10px;
+            --radius-md: 12px;
+            --radius-lg: 15px;
+            --radius-xl: 20px;
+
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 8px 20px rgba(102, 126, 234, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+
+            /* Mobile-specific spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Prevent iOS zoom on input focus */
+        @supports (-webkit-touch-callout: none) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        html {
+            /* Smooth scrolling */
+            scroll-behavior: smooth;
+            /* Prevent text size adjustment on orientation change */
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            min-height: -webkit-fill-available; /* iOS Safari fix */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: var(--spacing-md);
+            padding-top: env(safe-area-inset-top, var(--spacing-md));
+            padding-bottom: env(safe-area-inset-bottom, var(--spacing-md));
+            padding-left: env(safe-area-inset-left, var(--spacing-md));
+            padding-right: env(safe-area-inset-right, var(--spacing-md));
+            /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior-y: contain;
+        }
+
+        /* Layout */
+        .calculator {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 700px;
+            margin: var(--spacing-md) auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--color-text);
+            margin-bottom: var(--spacing-lg);
+            font-size: clamp(22px, 5vw, 28px); /* Responsive font size */
+        }
+
+        h2 {
+            color: var(--color-text);
+            margin: var(--spacing-lg) 0 var(--spacing-sm);
+            font-size: clamp(16px, 4vw, 18px);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            flex-wrap: wrap;
+        }
+
+        /* Form Elements */
+        .input-group { margin-bottom: var(--spacing-md); }
+        .input-group--inline { margin-bottom: 0; }
+
+        label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+        }
+        .label--small { font-size: 12px; margin-bottom: 4px; }
+
+        input, select {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 16px; /* Prevents iOS zoom */
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background: white;
+            -webkit-appearance: none; /* Remove iOS default styling */
+            appearance: none;
+        }
+
+        /* Custom select arrow */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .input--small { padding: 10px 12px; font-size: 16px; }
+        .select--small { padding: 10px 12px; font-size: 16px; padding-right: 32px; }
+
+        .error { color: var(--color-error); font-size: 13px; margin-top: 4px; display: none; }
+
+        /* Slider Input Group */
+        .slider-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .slider-group__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .slider-group__label,
+        label {
+            color: var(--color-text-muted);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .slider-group__value {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .slider-group__input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--color-text);
+            background: white;
+        }
+
+        .slider-group__input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .slider-group__unit {
+            font-size: 14px;
+            color: var(--color-text-muted);
+            font-weight: 500;
+        }
+
+        /* Range Slider Styling */
+        .slider-container {
+            position: relative;
+            width: 100%;
+            padding: 10px 0;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: linear-gradient(to right, #667eea 0%, #667eea var(--slider-progress, 50%), #e0e0e0 var(--slider-progress, 50%), #e0e0e0 100%);
+            outline: none;
+            cursor: pointer;
+            touch-action: pan-x;
+        }
+
+        /* Slider thumb base styles (shared) */
+        .slider::-webkit-slider-thumb,
+        .slider::-moz-range-thumb {
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Webkit (Chrome, Safari, Edge) */
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .slider::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Firefox */
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+        }
+
+        .slider::-moz-range-track {
+            height: 4px;
+            border-radius: 2px;
+            background: #e0e0e0;
+        }
+
+        .slider::-moz-range-progress {
+            height: 4px;
+            border-radius: 2px;
+            background: #667eea;
+        }
+
+        /* Slider Labels */
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--color-text-light);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: var(--spacing-md);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: var(--spacing-sm);
+            /* Better touch targets */
+            min-height: 48px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Disable hover effects on touch devices */
+        @media (hover: hover) {
+            .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        }
+
+        .btn:active { transform: translateY(0); opacity: 0.9; }
+
+        .btn--primary { width: 100%; background: var(--primary-gradient); font-size: 18px; }
+        .btn--secondary { background: var(--success-gradient); padding: var(--spacing-sm) var(--spacing-md); font-size: 14px; }
+        .btn--danger { background: var(--danger-gradient); padding: var(--spacing-xs) var(--spacing-sm); font-size: 14px; margin-top: 0; min-height: 40px; }
+        .btn--toggle { background: var(--neutral-gradient); width: 100%; margin-top: var(--spacing-sm); }
+
+        /* Results Section */
+        .result {
+            margin-top: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--bg-gradient);
+            border-radius: var(--radius-lg);
+            display: none;
+        }
+
+        .result.show { display: block; animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid #ddd;
+            gap: var(--spacing-sm);
+        }
+
+        .result-item:last-child { border-bottom: none; }
+        .result-label {
+            color: var(--color-text-muted);
+            font-weight: 500;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .result-value {
+            color: var(--color-text);
+            font-weight: 700;
+            font-size: 14px;
+            text-align: right;
+            word-break: break-word;
+        }
+        .result-value--success { color: var(--color-success); }
+
+        /* EMI Highlight */
+        .emi-highlight {
+            background: var(--primary-gradient);
+            color: white;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .emi-highlight__label { font-size: 14px; opacity: 0.9; margin-bottom: 4px; }
+        .emi-highlight__value { font-size: clamp(24px, 6vw, 32px); font-weight: 700; word-break: break-word; }
+        .emi-highlight__note { font-size: 12px; opacity: 0.8; margin-top: var(--spacing-xs); line-height: 1.4; }
+
+        /* Prepayment Section */
+        .prepayment-section {
+            margin-top: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: #f8f9fa;
+            border-radius: var(--radius-lg);
+            border: 2px dashed #ddd;
+        }
+
+        .prepayment-section__description {
+            color: var(--color-text-muted);
+            font-size: 13px;
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.5;
+        }
+        .prepayment-list { margin: var(--spacing-sm) 0; }
+
+        .prepayment-item {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: var(--spacing-sm);
+            align-items: end;
+            padding: var(--spacing-sm);
+            background: white;
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .no-prepayments {
+            text-align: center;
+            color: var(--color-text-light);
+            padding: var(--spacing-md);
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        /* Strategy Badge */
+        .strategy-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .strategy-badge--tenure { background: #dbeafe; color: #1d4ed8; }
+        .strategy-badge--emi { background: #fef3c7; color: #b45309; }
+
+        /* Comparison Section */
+        .comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .comparison-box {
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 2px solid;
+        }
+        .comparison-box--without { background: #fee2e2; border-color: #fca5a5; }
+        .comparison-box--with { background: #d1fae5; border-color: #6ee7b7; }
+        .comparison-box__label,
+        .comparison-box__tenure { font-size: 11px; color: var(--color-text-muted); }
+        .comparison-box__label { margin-bottom: 4px; }
+        .comparison-box__tenure { margin-top: 4px; }
+        .comparison-box__value { font-size: clamp(16px, 4vw, 20px); font-weight: 700; color: var(--color-text); word-break: break-word; }
+
+        /* Pie Chart */
+        .chart-section {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .pie-chart {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .pie-chart__center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .pie-chart__center-label {
+            font-size: 10px;
+            color: var(--color-text-muted);
+        }
+
+        .pie-chart__center-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* Legend colors now set inline via JS for flexibility */
+
+        .legend-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .legend-label { font-size: 12px; color: var(--color-text-muted); }
+        .legend-value { font-size: 14px; font-weight: 600; color: var(--color-text); }
+
+        /* Schedule Table */
+        .schedule-container {
+            margin-top: var(--spacing-md);
+            max-height: 350px;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            border-radius: var(--radius-sm);
+            border: 1px solid #ddd;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            /* Prevent table from being too narrow */
+            min-width: 400px;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            padding: var(--spacing-xs) 4px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .schedule-table th:first-child,
+        .schedule-table td:first-child { text-align: center; }
+
+        .schedule-table th {
+            background: var(--primary-gradient);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            font-size: 10px;
+        }
+
+        .schedule-table td {
+            border-bottom: 1px solid var(--color-border-light);
+        }
+
+        .schedule-table .tr--prepayment { background: #d1fae5; }
+        .schedule-table .tr--emi-change { background: #fef3c7; }
+
+        /* Remove hover on touch devices */
+        @media (hover: hover) {
+            .schedule-table tr:hover { background: #f5f5f5; }
+            .schedule-table .tr--prepayment:hover { background: #a7f3d0; }
+            .schedule-table .tr--emi-change:hover { background: #fde68a; }
+        }
+
+        /* ========================================
+           RESPONSIVE BREAKPOINTS
+           ======================================== */
+
+        /* Tablet and below */
+        @media (max-width: 768px) {
+            body {
+                padding: var(--spacing-sm);
+                align-items: flex-start;
+            }
+
+            .calculator {
+                padding: var(--spacing-md);
+                border-radius: var(--radius-lg);
+                margin: 0;
+            }
+
+            h1 { margin-bottom: var(--spacing-md); }
+
+            .prepayment-item {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .prepayment-item .input-group--strategy {
+                grid-column: span 2;
+            }
+
+            .prepayment-item .btn--danger {
+                grid-column: span 2;
+                margin-top: var(--spacing-xs);
+            }
+        }
+
+        /* Mobile phones */
+        @media (max-width: 480px) {
+            :root {
+                --spacing-md: 12px;
+                --spacing-lg: 20px;
+                --spacing-xl: 24px;
+            }
+
+            body {
+                padding: var(--spacing-xs);
+            }
+
+            .calculator {
+                padding: var(--spacing-sm);
+                border-radius: var(--radius-md);
+            }
+
+            h2 svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .prepayment-section {
+                padding: var(--spacing-sm);
+            }
+
+            .prepayment-item {
+                grid-template-columns: 1fr;
+                padding: var(--spacing-sm);
+            }
+
+            .prepayment-item .input-group--strategy,
+            .prepayment-item .btn--danger {
+                grid-column: span 1;
+            }
+
+            .result {
+                padding: var(--spacing-sm);
+            }
+
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .result-value {
+                text-align: left;
+            }
+
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .pie-chart {
+                width: 140px;
+                height: 140px;
+            }
+
+            .pie-chart__center {
+                width: 70px;
+                height: 70px;
+            }
+
+            .chart-legend {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: var(--spacing-sm);
+            }
+
+            .legend-item {
+                min-width: 45%;
+            }
+
+            .schedule-table {
+                font-size: 10px;
+                min-width: 350px;
+            }
+
+            .schedule-table th,
+            .schedule-table td {
+                padding: 6px 3px;
+            }
+
+            .strategy-badge {
+                font-size: 8px;
+                padding: 1px 4px;
+            }
+
+            .btn {
+                font-size: 15px;
+            }
+
+            .btn--primary {
+                font-size: 16px;
+            }
+
+            /* Slider adjustments for mobile */
+            .slider::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+
+            .slider-group__input {
+                width: 70px;
+                padding: 8px;
+            }
+
+            .slider-group__header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+
+        /* Very small phones */
+        @media (max-width: 360px) {
+            .calculator {
+                padding: var(--spacing-xs);
+            }
+
+            .emi-highlight {
+                padding: var(--spacing-sm);
+            }
+
+            .schedule-table {
+                min-width: 320px;
+                font-size: 9px;
+            }
+        }
+
+        /* Landscape orientation on mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                align-items: flex-start;
+            }
+
+            .calculator {
+                margin-top: var(--spacing-xs);
+            }
+
+            .schedule-container {
+                max-height: 200px;
+            }
+        }
+
+        /* High DPI / Retina displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .calculator {
+                /* Sharper shadows on retina */
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        /* Reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Dark mode support (optional) */
+        @media (prefers-color-scheme: dark) {
+            /* Uncomment to enable dark mode
+            :root {
+                --color-text: #f0f0f0;
+                --color-text-muted: #b0b0b0;
+                --color-border: #444;
+            }
+
+            .calculator {
+                background: #1a1a2e;
+            }
+
+            input, select {
+                background: #16213e;
+                color: #f0f0f0;
+            }
+            */
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator" id="app"></div>
+
+    <script>
+    (() => {
+        'use strict';
+
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            currency: { locale: 'en-IN', symbol: '₹' },
+            defaults: { prepayMonth: 12, prepayAmount: 50000, tenure: 10 }, // tenure in years
+            validation: {
+                principal: { min: 1, error: 'Please enter a valid principal amount' },
+                rate: { min: 0, error: 'Please enter a valid interest rate' },
+                tenure: { min: 1, error: 'Please enter a valid tenure' }
+            },
+            strategies: {
+                REDUCE_TENURE: 'reduce_tenure',
+                REDUCE_EMI: 'reduce_emi'
+            },
+            sliders: {
+                rate: { min: 0, max: 20, step: 0.1, default: 8.5 },
+                tenure: { min: 1, max: 30, step: 1, default: 10 } // in years
+            }
+        };
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        const Utils = {
+            formatCurrency: (amount, decimals = 2) =>
+                CONFIG.currency.symbol + amount.toLocaleString(CONFIG.currency.locale, {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                }),
+
+            $: selector => document.querySelector(selector),
+            $$: selector => document.querySelectorAll(selector),
+
+            html: (strings, ...values) =>
+                strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), ''),
+
+            // Helper to show/hide elements
+            show: (selector, display = 'block') => {
+                const el = Utils.$(selector);
+                if (el) el.style.display = display;
+            },
+            hide: selector => Utils.show(selector, 'none'),
+
+            // Helper to set text content
+            setText: (selector, text) => {
+                const el = Utils.$(selector);
+                if (el) el.textContent = text;
+            },
+
+            // Clamp value between min and max
+            clamp: (value, min, max) => Math.min(Math.max(value, min), max)
+        };
+
+        // ============================================
+        // EMI CALCULATOR ENGINE
+        // ============================================
+        const EMIEngine = {
+            calculateEMI(principal, monthlyRate, tenure) {
+                if (monthlyRate === 0) return principal / tenure;
+                if (tenure <= 0) return principal;
+                const factor = Math.pow(1 + monthlyRate, tenure);
+                return principal * monthlyRate * factor / (factor - 1);
+            },
+
+            calculateRemainingTenure(balance, monthlyRate, emi) {
+                if (monthlyRate === 0) return Math.ceil(balance / emi);
+                if (emi <= balance * monthlyRate) return Infinity;
+                return Math.ceil(Math.log(emi / (emi - balance * monthlyRate)) / Math.log(1 + monthlyRate));
+            },
+
+            calculateWithoutPrepayments(principal, monthlyRate, tenure) {
+                const emi = this.calculateEMI(principal, monthlyRate, tenure);
+                const totalPayment = emi * tenure;
+                return { emi, totalPayment, totalInterest: totalPayment - principal, tenure };
+            },
+
+            calculateWithPrepayments(principal, monthlyRate, originalTenure, prepayments) {
+                const initialEMI = this.calculateEMI(principal, monthlyRate, originalTenure);
+                const prepaymentMap = this.groupPrepaymentsByMonth(prepayments);
+
+                // State variables
+                let balance = principal, currentEMI = initialEMI, remainingTenure = originalTenure;
+                let totalInterest = 0, totalPrepayments = 0, totalCharges = 0;
+                const schedule = [], emiChanges = [];
+                const maxMonths = originalTenure * 3;
+
+                for (let month = 1; balance > 0.01 && month <= maxMonths; month++) {
+                    const result = this.processMonth(
+                        month, balance, currentEMI, monthlyRate,
+                        remainingTenure, prepaymentMap[month] || []
+                    );
+
+                    schedule.push(result.row);
+                    balance = result.newBalance;
+                    totalInterest += result.interest;
+                    totalPrepayments += result.prepayment;
+                    totalCharges += result.charges;
+
+                    // Track EMI changes
+                    if (result.newEMI !== null && result.newEMI !== currentEMI) {
+                        emiChanges.push({ month, oldEMI: currentEMI, newEMI: result.newEMI });
+                        currentEMI = result.newEMI;
+                    }
+
+                    remainingTenure = result.newRemainingTenure ?? remainingTenure - 1;
+                }
+
+                return {
+                    emi: initialEMI,
+                    finalEMI: currentEMI,
+                    hasEMIReduction: emiChanges.length > 0,
+                    emiChanges,
+                    totalPayment: schedule.reduce((sum, s) => sum + s.emi + s.prepayment + s.charges, 0),
+                    totalInterest,
+                    totalPrepayments,
+                    totalCharges,
+                    actualTenure: schedule.length,
+                    schedule
+                };
+            },
+
+            groupPrepaymentsByMonth(prepayments) {
+                return prepayments.reduce((map, p) => {
+                    (map[p.month] ??= []).push(p);
+                    return map;
+                }, {});
+            },
+
+            processMonth(month, balance, emi, monthlyRate, remainingTenure, monthPrepayments = []) {
+                const interest = balance * monthlyRate;
+                const isLastPayment = balance < emi;
+                const actualEMI = isLastPayment ? balance + interest : emi;
+                const principal = isLastPayment ? balance : Math.min(emi - interest, balance);
+
+                let newBalance = balance - principal;
+                let prepayment = 0, charges = 0, newEMI = null, newRemainingTenure = null, strategyApplied = null;
+
+                // Process prepayments
+                for (const p of monthPrepayments) {
+                    if (newBalance <= 0) break;
+
+                    const actualPrepay = Math.min(p.amount, newBalance);
+                    prepayment += actualPrepay;
+                    charges += actualPrepay * (p.charges / 100);
+                    newBalance -= actualPrepay;
+
+                    if (newBalance > 0 && p.strategy) {
+                        strategyApplied = p.strategy;
+                        const newTenure = remainingTenure - 1;
+
+                        if (p.strategy === CONFIG.strategies.REDUCE_EMI && newTenure > 0) {
+                            newEMI = this.calculateEMI(newBalance, monthlyRate, newTenure);
+                            newRemainingTenure = newTenure;
+                        } else {
+                            newRemainingTenure = this.calculateRemainingTenure(newBalance, monthlyRate, emi);
+                        }
+                    }
+                }
+
+                newBalance = Math.max(0, newBalance);
+
+                return {
+                    row: { month, emi: actualEMI, principal, interest, prepayment, charges,
+                           balance: newBalance, hasPrepayment: prepayment > 0, strategyApplied, emiChanged: newEMI !== null },
+                    newBalance, interest, prepayment, charges, newEMI, newRemainingTenure
+                };
+            }
+        };
+
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        const State = {
+            prepaymentCounter: 0,
+            scheduleVisible: false,
+
+            getInputValues() {
+                const getValue = (id, defaultVal = 0) => parseFloat(Utils.$(`#${id}`)?.value) || defaultVal;
+                return {
+                    principal: getValue('principal'),
+                    rate: getValue('rate'),
+                    tenure: Math.round(getValue('tenure') * 12) // Convert years to months
+                };
+            },
+
+            getPrepayments() {
+                const getVal = (el, sel, parser = parseFloat) => parser(el.querySelector(sel)?.value) || 0;
+
+                return [...Utils.$$('.prepayment-item')]
+                    .map(item => ({
+                        month: getVal(item, '.prepay-month', parseInt),
+                        amount: getVal(item, '.prepay-amount'),
+                        charges: getVal(item, '.prepay-charges'),
+                        strategy: item.querySelector('.prepay-strategy')?.value
+                    }))
+                    .filter(p => p.month > 0 && p.amount > 0)
+                    .sort((a, b) => a.month - b.month);
+            },
+
+            nextPrepaymentId: function() { return ++this.prepaymentCounter; }
+        };
+
+        // ============================================
+        // VALIDATION
+        // ============================================
+        const Validator = {
+            rules: {
+                principal: v => v > 0,
+                rate: v => v >= 0,
+                tenure: v => v > 0
+            },
+
+            validate(inputs) {
+                Utils.$$('.error').forEach(el => el.style.display = 'none');
+
+                const errors = Object.entries(this.rules)
+                    .filter(([field, isValid]) => !isValid(inputs[field]))
+                    .map(([field]) => field);
+
+                errors.forEach(field => Utils.show(`#${field}Error`));
+                return errors.length === 0;
+            }
+        };
+
+        // ============================================
+        // UI COMPONENTS
+        // ============================================
+        const Components = {
+            inputGroup(id, label, placeholder, attrs = {}) {
+                const { min = 0, step, error } = attrs;
+                return Utils.html`
+                    <div class="input-group">
+                        <label for="${id}">${label}</label>
+                        <input type="number" id="${id}" placeholder="${placeholder}" min="${min}" ${step ? `step="${step}"` : ''}>
+                        ${error ? `<div class="error" id="${id}Error">${error}</div>` : ''}
+                    </div>
+                `;
+            },
+
+            sliderGroup(id, label, unit, config, error = '') {
+                const { min, max, step, default: defaultVal } = config;
+                const progress = ((defaultVal - min) / (max - min)) * 100;
+                return Utils.html`
+                    <div class="slider-group">
+                        <div class="slider-group__header">
+                            <label class="slider-group__label" for="${id}">${label}</label>
+                            <div class="slider-group__value">
+                                <input type="number"
+                                    class="slider-group__input"
+                                    id="${id}"
+                                    value="${defaultVal}"
+                                    min="${min}"
+                                    max="${max}"
+                                    step="${step}">
+                                <span class="slider-group__unit">${unit}</span>
+                            </div>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range"
+                                class="slider"
+                                id="${id}Slider"
+                                min="${min}"
+                                max="${max}"
+                                step="${step}"
+                                value="${defaultVal}"
+                                style="--slider-progress: ${progress}%">
+                        </div>
+                        <div class="slider-labels">
+                            <span>${min}${unit}</span>
+                            <span>${max}${unit}</span>
+                        </div>
+                        ${error ? `<div class="error" id="${id}Error">${error}</div>` : ''}
+                    </div>
+                `;
+            },
+
+            prepaymentItem(id, maxMonth) {
+                return Utils.html`
+                    <div class="prepayment-item" id="prepayment-${id}">
+                        <div class="input-group input-group--inline">
+                            <label class="label--small">Month</label>
+                            <input type="number" class="prepay-month input--small" placeholder="Month #" min="1" max="${maxMonth}" value="${CONFIG.defaults.prepayMonth}">
+                        </div>
+                        <div class="input-group input-group--inline">
+                            <label class="label--small">Amount (₹)</label>
+                            <input type="number" class="prepay-amount input--small" placeholder="Amount" min="0" value="${CONFIG.defaults.prepayAmount}">
+                        </div>
+                        <div class="input-group input-group--inline">
+                            <label class="label--small">Charges (%)</label>
+                            <input type="number" class="prepay-charges input--small" placeholder="0" min="0" max="100" step="0.1" value="0">
+                        </div>
+                        <div class="input-group input-group--inline input-group--strategy">
+                            <label class="label--small">After Prepayment</label>
+                            <select class="prepay-strategy select--small">
+                                <option value="${CONFIG.strategies.REDUCE_TENURE}">Reduce Tenure</option>
+                                <option value="${CONFIG.strategies.REDUCE_EMI}">Reduce EMI</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn--danger" data-remove="${id}">Remove</button>
+                    </div>
+                `;
+            },
+
+            resultItem(label, id, extraClass = '') {
+                return Utils.html`
+                    <div class="result-item" id="${id}Row">
+                        <span class="result-label">${label}</span>
+                        <span class="result-value ${extraClass}" id="${id}Value">₹0</span>
+                    </div>
+                `;
+            },
+
+            scheduleRow(row) {
+                const fmt = v => Utils.formatCurrency(v, 0);
+                const rowClass = row.emiChanged ? 'tr--emi-change' :
+                                 row.hasPrepayment ? 'tr--prepayment' : '';
+
+                const prepayCell = row.prepayment > 0
+                    ? `${fmt(row.prepayment)} <span class="strategy-badge strategy-badge--${
+                        row.strategyApplied === CONFIG.strategies.REDUCE_EMI ? 'emi">EMI↓' : 'tenure">Tenure↓'
+                      }</span>`
+                    : '-';
+
+                return `<tr class="${rowClass}">
+                    <td>${row.month}</td>
+                    <td>${fmt(row.emi)}</td>
+                    <td>${fmt(row.principal)}</td>
+                    <td>${fmt(row.interest)}</td>
+                    <td>${prepayCell}</td>
+                    <td>${fmt(row.balance)}</td>
+                </tr>`;
+            },
+
+            pieChart(data) {
+                const { principal, interest, prepayments, charges, total } = data;
+                const fmt = Utils.formatCurrency;
+
+                // Build segments array (only include non-zero values)
+                const segmentDefs = [
+                    { value: principal, color: '#667eea', label: 'Principal' },
+                    { value: interest, color: '#f59e0b', label: 'Interest' },
+                    { value: prepayments, color: '#10b981', label: 'Prepayments' },
+                    { value: charges, color: '#ef4444', label: 'Charges' }
+                ];
+                const segments = segmentDefs.filter(s => s.value > 0);
+
+                // Build conic gradient
+                let currentAngle = 0;
+                const gradient = segments.map(seg => {
+                    const startAngle = currentAngle;
+                    currentAngle += (seg.value / total) * 100;
+                    return `${seg.color} ${startAngle}% ${currentAngle}%`;
+                }).join(', ');
+
+                // Build legend items
+                const legendItems = segments.map(seg => Utils.html`
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${seg.color};"></div>
+                        <div class="legend-text">
+                            <span class="legend-label">${seg.label}</span>
+                            <span class="legend-value">${fmt(seg.value, 0)}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                return Utils.html`
+                    <div class="chart-section">
+                        <div class="chart-container">
+                            <div class="pie-chart" style="background: conic-gradient(${gradient});">
+                                <div class="pie-chart__center">
+                                    <span class="pie-chart__center-label">Total</span>
+                                    <span class="pie-chart__center-value">${fmt(total, 0)}</span>
+                                </div>
+                            </div>
+                            <div class="chart-legend">${legendItems}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        // ============================================
+        // VIEW RENDERER
+        // ============================================
+        const View = {
+            render() {
+                Utils.$('#app').innerHTML = this.template();
+                this.bindEvents();
+            },
+
+            template() {
+                const { inputGroup, sliderGroup, resultItem } = Components;
+                const { validation, sliders } = CONFIG;
+
+                return Utils.html`
+                    <h1>₹ Loan EMI Planner</h1>
+
+                    ${inputGroup('principal', 'Principal Amount (₹)', 'Enter loan amount', { min: 1, error: validation.principal.error })}
+                    ${sliderGroup('rate', 'Annual Interest Rate', '%', sliders.rate, validation.rate.error)}
+                    ${sliderGroup('tenure', 'Loan Tenure', 'yrs', sliders.tenure, validation.tenure.error)}
+
+                    <div class="prepayment-section">
+                        <h2>
+                            <span style="font-size: 20px;">₹</span>
+                            Prepayments (Optional)
+                        </h2>
+                        <p class="prepayment-section__description">
+                            Add prepayments and choose whether to reduce EMI or tenure after each prepayment.
+                        </p>
+                        <div class="prepayment-list" id="prepaymentList">
+                            <div class="no-prepayments" id="noPrepayments">No prepayments added yet</div>
+                        </div>
+                        <button type="button" class="btn btn--secondary" id="addPrepaymentBtn">+ Add Prepayment</button>
+                    </div>
+
+                    <button class="btn btn--primary" id="calculateBtn">Calculate EMI</button>
+
+                    <div class="result" id="result">
+                        <div class="emi-highlight">
+                            <div class="emi-highlight__label">Monthly EMI</div>
+                            <div class="emi-highlight__value" id="emiValue">₹0</div>
+                            <div class="emi-highlight__note" id="emiNote" style="display: none;"></div>
+                        </div>
+
+                        <div id="pieChartContainer"></div>
+
+                        <div class="comparison" id="comparisonSection" style="display: none;">
+                            <div class="comparison-box comparison-box--without">
+                                <div class="comparison-box__label">Without Prepayments</div>
+                                <div class="comparison-box__value" id="totalWithout">₹0</div>
+                                <div class="comparison-box__tenure" id="tenureWithout">0 months</div>
+                            </div>
+                            <div class="comparison-box comparison-box--with">
+                                <div class="comparison-box__label">With Prepayments</div>
+                                <div class="comparison-box__value" id="totalWith">₹0</div>
+                                <div class="comparison-box__tenure" id="tenureWith">0 months</div>
+                            </div>
+                        </div>
+
+                        ${resultItem('Principal Amount', 'principal')}
+                        ${resultItem('Total Interest', 'interest')}
+                        ${resultItem('Total Prepayments', 'prepayment')}
+                        ${resultItem('Prepayment Charges', 'charges')}
+                        ${resultItem('Total Payment', 'total')}
+                        ${resultItem('Interest Saved', 'savings', 'result-value--success')}
+                        ${resultItem('Tenure Reduced By', 'tenureSaved', 'result-value--success')}
+                        ${resultItem('Final EMI', 'finalEmi', 'result-value--success')}
+
+                        <button class="btn btn--toggle" id="toggleScheduleBtn">
+                            <span id="scheduleToggleText">Show Amortization Schedule</span>
+                        </button>
+
+                        <div class="schedule-container" id="scheduleContainer" style="display: none;">
+                            <table class="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Prepay</th><th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            },
+
+            bindEvents() {
+                Utils.$('#calculateBtn').addEventListener('click', Controller.calculate);
+                Utils.$('#addPrepaymentBtn').addEventListener('click', Controller.addPrepayment);
+                Utils.$('#toggleScheduleBtn').addEventListener('click', Controller.toggleSchedule);
+                Utils.$('#prepaymentList').addEventListener('click', Controller.handlePrepaymentAction);
+
+                // Slider synchronization
+                Controller.setupSliderSync('rate', CONFIG.sliders.rate);
+                Controller.setupSliderSync('tenure', CONFIG.sliders.tenure);
+
+                // Update prepayment max month when tenure changes
+                Utils.$('#tenure').addEventListener('change', Controller.updatePrepaymentMaxMonth);
+                Utils.$('#tenureSlider').addEventListener('input', Controller.updatePrepaymentMaxMonth);
+
+                // Enter key triggers calculation
+                Utils.$$('input[type="number"]').forEach(input => {
+                    input.addEventListener('keypress', e => e.key === 'Enter' && Controller.calculate());
+                });
+            },
+
+            updateResults(withoutPrepay, withPrepay, hasPrepayments, principal) {
+                const fmt = Utils.formatCurrency;
+                const { setText, show, hide } = Utils;
+
+                // Update main result values
+                const resultValues = {
+                    emiValue: fmt(withPrepay.emi),
+                    principalValue: fmt(principal),
+                    interestValue: fmt(withPrepay.totalInterest),
+                    prepaymentValue: fmt(withPrepay.totalPrepayments),
+                    chargesValue: fmt(withPrepay.totalCharges),
+                    totalValue: fmt(withPrepay.totalPayment)
+                };
+                Object.entries(resultValues).forEach(([id, value]) => setText(`#${id}`, value));
+
+                // Render pie chart
+                Utils.$('#pieChartContainer').innerHTML = Components.pieChart({
+                    principal,
+                    interest: withPrepay.totalInterest,
+                    prepayments: withPrepay.totalPrepayments,
+                    charges: withPrepay.totalCharges,
+                    total: withPrepay.totalPayment
+                });
+
+                // Show EMI note if EMI changed
+                if (withPrepay.hasEMIReduction) {
+                    setText('#emiNote', `EMI reduces to ${fmt(withPrepay.finalEMI)} after prepayments`);
+                    show('#emiNote');
+                    show('#finalEmiRow', 'flex');
+                    setText('#finalEmiValue', fmt(withPrepay.finalEMI));
+                } else {
+                    hide('#emiNote');
+                    hide('#finalEmiRow');
+                }
+
+                // Toggle comparison and savings visibility
+                const savingsDisplay = hasPrepayments ? 'flex' : 'none';
+                Utils.$('#comparisonSection').style.display = hasPrepayments ? 'grid' : 'none';
+                ['#savingsRow', '#tenureSavedRow'].forEach(sel =>
+                    Utils.$(sel).style.display = savingsDisplay
+                );
+
+                if (hasPrepayments) {
+                    const comparisonValues = {
+                        totalWithout: fmt(withoutPrepay.totalPayment, 0),
+                        tenureWithout: `${withoutPrepay.tenure} months`,
+                        totalWith: fmt(withPrepay.totalPayment, 0),
+                        tenureWith: `${withPrepay.actualTenure} months`,
+                        savingsValue: fmt(withoutPrepay.totalInterest - withPrepay.totalInterest),
+                        tenureSavedValue: `${withoutPrepay.tenure - withPrepay.actualTenure} months`
+                    };
+                    Object.entries(comparisonValues).forEach(([id, value]) => setText(`#${id}`, value));
+                }
+
+                this.renderSchedule(withPrepay.schedule);
+                Utils.$('#result').classList.add('show');
+            },
+
+            renderSchedule(schedule) {
+                Utils.$('#scheduleBody').innerHTML = schedule.map(Components.scheduleRow).join('');
+            },
+
+            toggleScheduleVisibility(visible) {
+                visible ? Utils.show('#scheduleContainer') : Utils.hide('#scheduleContainer');
+                Utils.setText('#scheduleToggleText', `${visible ? 'Hide' : 'Show'} Amortization Schedule`);
+            }
+        };
+
+        // ============================================
+        // CONTROLLER
+        // ============================================
+        const Controller = {
+            calculate() {
+                const inputs = State.getInputValues();
+
+                if (!Validator.validate(inputs)) {
+                    Utils.$('#result').classList.remove('show');
+                    return;
+                }
+
+                const { principal, rate, tenure } = inputs;
+                const monthlyRate = rate / 12 / 100;
+                const prepayments = State.getPrepayments();
+
+                const withoutPrepay = EMIEngine.calculateWithoutPrepayments(principal, monthlyRate, tenure);
+                const withPrepay = EMIEngine.calculateWithPrepayments(principal, monthlyRate, tenure, prepayments);
+
+                View.updateResults(withoutPrepay, withPrepay, prepayments.length > 0, principal);
+            },
+
+            addPrepayment() {
+                const tenure = State.getInputValues().tenure || CONFIG.defaults.tenure * 12;
+                const id = State.nextPrepaymentId();
+
+                Utils.hide('#noPrepayments');
+                Utils.$('#prepaymentList').insertAdjacentHTML('beforeend', Components.prepaymentItem(id, tenure));
+            },
+
+            handlePrepaymentAction(e) {
+                const removeId = e.target.dataset.remove;
+                if (!removeId) return;
+
+                Utils.$(`#prepayment-${removeId}`)?.remove();
+
+                if (!Utils.$$('.prepayment-item').length) {
+                    Utils.show('#noPrepayments');
+                }
+            },
+
+            toggleSchedule() {
+                State.scheduleVisible = !State.scheduleVisible;
+                View.toggleScheduleVisibility(State.scheduleVisible);
+            },
+
+            updatePrepaymentMaxMonth() {
+                const tenure = State.getInputValues().tenure || CONFIG.defaults.tenure * 12;
+                Utils.$$('.prepay-month').forEach(input => input.max = tenure);
+            },
+
+            setupSliderSync(id, config) {
+                const input = Utils.$(`#${id}`);
+                const slider = Utils.$(`#${id}Slider`);
+
+                if (!input || !slider) return;
+
+                const { min, max } = config;
+
+                const updateProgress = value => {
+                    const progress = ((value - min) / (max - min)) * 100;
+                    slider.style.setProperty('--slider-progress', `${progress}%`);
+                };
+
+                const syncValues = value => {
+                    const clamped = Utils.clamp(value, min, max);
+                    input.value = clamped;
+                    slider.value = clamped;
+                    updateProgress(clamped);
+                };
+
+                slider.addEventListener('input', e => syncValues(parseFloat(e.target.value)));
+                input.addEventListener('input', e => syncValues(parseFloat(e.target.value)));
+                input.addEventListener('blur', e => {
+                    const value = parseFloat(e.target.value);
+                    syncValues(isNaN(value) ? min : value);
+                });
+            }
+        };
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => View.render());
+    })();
+    </script>
+</body>
+</html>
